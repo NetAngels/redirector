@@ -1,0 +1,4 @@
+.*.swp
+*.o
+/redirector
+/test_data.db

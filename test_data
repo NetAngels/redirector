@@ -1,0 +1,10 @@
+example.net
+301:http://example.com/index.html
+www.example.net
+302:http://www.example.com/index.html
+127.0.0.1:8080
+302:http://www.netangels.ru/
+127.0.0.2:8080
+302:http://www.netangels.ru/services/
+127.0.0.3:8080
+302:http://www.netangels.ru/about/
