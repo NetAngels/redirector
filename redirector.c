@@ -5,12 +5,23 @@
 #include <stdio.h>
 #include <signal.h>
 #include <getopt.h>
+#include <time.h>
 #include <db.h>
 
 /* global options variable */
 rd_options options;
 
 #define CHECK(op, msg) {status=op; if (status){err=msg; goto fail;}}
+#define LOG(level, ...) {\
+    if (level<=options.verbose) {\
+        time_t _t = time(NULL);\
+        struct tm *_tm = localtime(&_t);\
+        char _ts[128];\
+        strftime(_ts, 127, "%Y-%m-%d %H:%M:%S", _tm); \
+        printf("%s\t", _ts);\
+        printf(__VA_ARGS__);\
+    }\
+};
 
 int main(int ac, char **av)
 {
@@ -50,12 +61,13 @@ fail:
 int get_options(int ac, char **av, rd_options *opts, char **err)
 {
 
-    static char options[] = "f:i:p:u:h";
+    static char options[] = "f:i:p:u:vh";
     static struct option long_options[] = {
        {"file", 1, 0, 'f'},
        {"ip", 1, 0, 'i'},
        {"port", 1, 0, 'p'},
        {"user", 1, 0, 'u'},
+       {"verbose", 0, 0, 'v'},
        {"help", 0, 0, 'h'},
     };
     int c;
@@ -95,10 +107,15 @@ int get_options(int ac, char **av, rd_options *opts, char **err)
                 opts->gid = pwd->pw_gid;
             }
             break;
+        case 'v':
+            opts->verbose ++;
+            break;
         case 'h':
             has_error ++; /* just show help text */ 
+            break;
         default:
             has_error ++;
+            break;
         }
     }
     if (has_error)
@@ -171,6 +188,7 @@ void on_request(struct evhttp_request *req, void *arg)
         http_explanation = "Internal server error";
         text = "500. Internal server error";
     }
+    LOG(1, "%s\t%d\t%s\n", hostname, http_status_code, location ? location : "-");
     /* create response buffer */
     struct evbuffer *evb = evbuffer_new();
     if (!evb) return;

@@ -10,6 +10,7 @@ typedef struct __rd_options {
     uid_t uid;
     gid_t gid;
     unsigned short port;
+    unsigned int verbose;
 } rd_options;
 
 extern rd_options options;
