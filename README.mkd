@@ -1,0 +1,76 @@
+Tiny HTTP redirector
+=====================
+
+Tiny HTTP redirector is a specialized HTTP server aimed to provide the
+mass-redirect service. Redirector can be considered as lightweight and partial
+replacement for Apache `mod_rewrite` module and `redirect` option, but has a
+very specific purpose: redirect all visitors of a certain domain `mirror.tld`
+to a new location described as URL: `http://domain.tld/path?args`.
+
+Installation
+------------
+
+HTTP redirector is based on the power of [libevent][] library and 
+[Berkeley DB][bdb] (ver.  4.8, but nothing besides hardcoded values in Makefile
+prevents you from using other version), so it's necessary to install these
+libraries and utilities beforehand.
+
+Under Debian/Ubuntu:
+
+    $ sudo apt-get install db4.8-util libdb4.8-dev libdb4.8 libevent-dev
+
+Then just type `make` to build the `./redirector` binary. That's it.
+
+
+[libevent]: http://monkey.org/~provos/libevent/
+[bdb]: http://www.oracle.com/technetwork/database/berkeleydb/overview/index.html
+
+Making the data file
+---------------------
+
+The source data files looks very straightforward and consists of the set of
+paired lines:
+
+    mirror.tld
+    code:http://domain.tld/path?args
+
+See `test_data` file to get the idea. `code` should be either 301 or 302. Just
+to mention, code 301 means "Permanent redirect", 302 stands for "Found"
+(temporary redirect).
+
+Having created the file, you have to compile it with `db4.8_load` utility from
+the set of `db4.8-util`.
+
+    db4.8_load -f test_data -T -t hash test_data.db
+
+The resulting `test_data.db` is the file to feed to the redirector.
+
+
+Running the redirector
+----------------------
+
+There is a couple of command line options to configure the redirector.
+
+`-f, --file` (required). Set the BDB filename  
+`-i, --ip` (optional, default "0.0.0.0"). Set the IP to bind to  
+`-p, --port` (optional, default 80). Set the port number  
+`-u, --user` (optional). Set the effective UID  
+`-v, --verbose` (optional). Make the redirector log every request to stdout  
+`-h, --help`. For the help.
+
+
+Testing the redirector
+-----------------------
+
+Simple command to make sure the redirector works:
+
+    $ curl --dump-header /dev/stdout http://mirror.tld/
+
+You should get something like this:
+
+    HTTP/1.1 301 Redirect
+    Server: Redirector/0.1
+    Connection: close
+    Location: http://domain.tld/path?args
+    Date: Thu, 17 Mar 2011 09:00:00 GMT
+    Content-Length: 0

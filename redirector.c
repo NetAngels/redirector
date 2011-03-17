@@ -139,6 +139,7 @@ void print_help(const char *err) {
         "-i, --ip (optional, default \"0.0.0.0\"). Set the IP to bind to\n"
         "-p, --port (optional, default 80). Set the port number\n"
         "-u, --user (optional). Set the effective UID\n"
+        "-v, --verbose (optional). Make the redirector log every request to stdout\n"
         "-h, --help. This help.\n"
     );
 }
