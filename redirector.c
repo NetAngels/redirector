@@ -7,6 +7,7 @@
 #include <getopt.h>
 #include <time.h>
 #include <db.h>
+#include <ctype.h>
 
 /* global options variable */
 rd_options options;
@@ -111,7 +112,7 @@ int get_options(int ac, char **av, rd_options *opts, char **err)
             opts->verbose ++;
             break;
         case 'h':
-            has_error ++; /* just show help text */ 
+            has_error ++; /* just show help text */
             break;
         default:
             has_error ++;
@@ -127,8 +128,8 @@ int get_options(int ac, char **av, rd_options *opts, char **err)
     return 0;
 }
 
-
-void print_help(const char *err) {
+void print_help(const char *err)
+{
     if (err)
         fprintf(stderr, "Error: %s\n\n", err);
     fprintf(stderr, ""
@@ -144,12 +145,21 @@ void print_help(const char *err) {
     );
 }
 
+void lowercase(char *str)
+{
+   size_t i = 0;
+   while (str[i]) {
+      str[i] = tolower(str[i]);
+      i++;
+   }
+}
+
 void on_request(struct evhttp_request *req, void *arg)
 {
     int status;
     DB *db = (DB*)arg;
     DBT key, data;
-    const char *hostname; 
+    char *hostname;
     char data_buf[2048];
     size_t data_buf_size = 2047;
 
@@ -165,8 +175,11 @@ void on_request(struct evhttp_request *req, void *arg)
     memset(&data_buf, 0, sizeof(data_buf));
 
     /* get the hostname */
-    hostname = evhttp_find_header(req->input_headers, "Host");
+    hostname = (char *)evhttp_find_header(req->input_headers, "Host");
     if (!hostname) return;
+    hostname = strdup(hostname);
+    if (!hostname) return;
+    lowercase(hostname);
 
     /* make a db request */
     key.data = (char *)hostname;
@@ -181,7 +194,7 @@ void on_request(struct evhttp_request *req, void *arg)
         http_explanation = "Redirect";
         location = &(data_buf[4]);
     } else if (status == DB_NOTFOUND) {
-        http_status_code = 404; 
+        http_status_code = 404;
         http_explanation = "Not found";
         text = "404. Redirect not found";
     } else {
@@ -205,4 +218,5 @@ void on_request(struct evhttp_request *req, void *arg)
     /* send reply */
     evhttp_send_reply(req, http_status_code, http_explanation, evb);
     evbuffer_free(evb);
+    free(hostname);
 }
